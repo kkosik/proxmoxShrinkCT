@@ -38,13 +38,16 @@ fi
 # Find and display the LV path (exclude snapshots/suffixes)
 echo "Finding logical volume path for VMID $VMID..."
 
+# Get the first clean disk name (vm-$VMID-disk-N)
 DISK_NAME=$(lvdisplay | grep -o "vm-$VMID-disk-[0-9]\+" | head -n1)
+
 if [[ -z "$DISK_NAME" ]]; then
     echo "Failed to find a valid disk (excluding snapshots/suffixes). Exiting."
     exit 1
 fi
 
-LV_PATH=$(lvdisplay | grep -A1 "$DISK_NAME" | grep "LV Path" | awk '{print $3}')
+# Get the LV path for that disk only (must end exactly with the disk name)
+LV_PATH=$(lvdisplay | awk '/LV Path/ {print $3}' | grep "/$DISK_NAME$" | head -n1)
 
 if [[ -z "$LV_PATH" ]]; then
     echo "Failed to find LV path. Exiting."
