@@ -35,15 +35,22 @@ else
     echo "Container $VMID was not running."
 fi
 
-# Find and display the LV path (search for any disk number)
+# Find and display the LV path (exclude snapshots/suffixes)
 echo "Finding logical volume path for VMID $VMID..."
-DISK_NAME=$(lvdisplay | grep "vm-$VMID-disk-" | grep -v snap | head -n1 | awk '{print $3}' | sed 's#.*/##')
+
+DISK_NAME=$(lvdisplay | grep -o "vm-$VMID-disk-[0-9]\+" | head -n1)
+if [[ -z "$DISK_NAME" ]]; then
+    echo "Failed to find a valid disk (excluding snapshots/suffixes). Exiting."
+    exit 1
+fi
+
 LV_PATH=$(lvdisplay | grep -A1 "$DISK_NAME" | grep "LV Path" | awk '{print $3}')
 
 if [[ -z "$LV_PATH" ]]; then
     echo "Failed to find LV path. Exiting."
     exit 1
 fi
+
 echo "LV Path: $LV_PATH"
 echo "Disk name: $DISK_NAME"
 
